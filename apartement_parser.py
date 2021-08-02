@@ -7,17 +7,20 @@ URL = 'https://saint-petersburg.irr.ru/real-estate/apartments-sale/'
 HEADERS =  {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; rv:71.0) Gecko/20100101 Firefox/71.0',
             'accept': '*/*'}
 
+# features:
+# rooms (студия - 1)+, area+, lowest_floor, highest_floor, total_floors, 
+# metro_station+, district, interior (remont), years, cost
 
 def get_html(url, append=''):
     r = requests.get(url+append, headers=HEADERS)
     return r
 
-def view_pages(links, liv_areas=[], districts=[], years=[], interiors=[], kitchen_areas=[], mins_to_metro=[]):
+def view_pages(links, liv_areas=[], districts=[], years=[], interiors=[], kitchen_areas=[], mins_to_metro=[], metro=[]):
     for l in links:
         page = get_html(l)
         s = BeautifulSoup(page.text, 'html.parser')
         items = s.find_all('li', class_='productPage__infoColumnBlockText')
-        ch_l, ch_d, ch_y_future, ch_y, ch_i, ch_k, ch_m = 0, 0, 0, 0, 0, 0, 0
+        ch_l, ch_d, ch_y_future, ch_y, ch_i, ch_k, ch_mm, ch_m = 0, 0, 0, 0, 0, 0, 0, 0
         for i in items:
             i = str(i.get_text())
             #print(i)
@@ -51,11 +54,16 @@ def view_pages(links, liv_areas=[], districts=[], years=[], interiors=[], kitche
                 i = float(i.replace(' м2', ''))
                 kitchen_areas.append(i)
                 ch_k = 1
+            elif 'Метро' in i:
+                i = i.replace('Метро: ', '')
+                i = i.replace(' м.', '')
+                metro.append(i)
+                ch_m = 1
             elif 'До метро, минут(пешком)' in i:
                 i = i.replace('До метро, минут(пешком): ', '')
                 i = int(i.replace(' мин/пеш', ''))
                 mins_to_metro.append(i)
-                ch_m = 1
+                ch_mm = 1
         if ch_l == 0:
             liv_areas.append(None)
         if ch_d == 0:
@@ -67,10 +75,12 @@ def view_pages(links, liv_areas=[], districts=[], years=[], interiors=[], kitche
         if ch_k == 0:
             kitchen_areas.append(None)
         if ch_m == 0:
+            metro.append(None)
+        if ch_mm == 0:
             mins_to_metro.append(None)
             #print(i)
             
-    return liv_areas, districts, years, interiors, kitchen_areas, mins_to_metro
+    return liv_areas, districts, years, interiors, kitchen_areas, mins_to_metro, metro
 
 def get_content(html):
     global df
@@ -86,43 +96,53 @@ def get_content(html):
     lowest_floors, highest_floors, metro, areas, links, prices = [], [], [], [], [], []
 
     for p in prs:
-        p = p.get_text()
-        p = p.replace('руб.', '')
-        p = p.replace('\n\t', '')
-        p = p.replace('\xa0', '')
-        #print(p)
-        p = int(p)
-        prices.append(p)
+        try:
+            p = p.get_text()
+            p = p.replace('руб.', '')
+            p = p.replace('\n\t', '')
+            p = p.replace('\xa0', '')
+            #print(p)
+            p = int(p)
+            prices.append(p)
+        except:
+            prices.append(None)
 
     for h in hrefs:
         links.append(h['href'])
 
     for f in floors:
-        f = f.get_text()
-        f = f.replace('эт. ', '')
-        l, h = map(int, f.split(' / '))
-        lowest_floors.append(l)
-        highest_floors.append(h)
+        try:
+            f = f.get_text()
+            f = f.replace('эт. ', '')
+            l, h = map(int, f.split(' / '))
+            lowest_floors.append(l)
+            highest_floors.append(h)
+        except:
+            lowest_floors.append(None)
+            highest_floors.append(None)
 
     for a in ars:
-        a = a.get_text()
-        if ' м' in a:
-            a = a.replace(' м', '')
-            try:
+        try:
+            a = a.get_text()
+            if ' м' in a:
+                a = a.replace(' м', '')
                 a = int(a) // 10
                 areas.append(a)
-            except:
-                continue
+        except:
+            areas.append(None)
 
-    for m in spans:
-        m = m.get_text()
-        if 'м.' in m:
-            if '\n' in m:
-                m = m.replace('\n', '')
-            m = m.replace(' м.', '')    
-            metro.append(m)
+    #for m in spans:
+    #    try:
+    #        m = m.get_text()
+    #        if 'м.' in m:
+    #            if '\n' in m:
+    #                m = m.replace('\n', '')
+    #            m = m.replace(' м.', '')    
+    #            metro.append(m)
+    #    except:
+    #        metro.append(None)
 
-    liv_areas, districts, years, interiors, kitchen_areas, mins_to_metro = view_pages(links)
+    liv_areas, districts, years, interiors, kitchen_areas, mins_to_metro, metro = view_pages(links)
 
     data = []
     
@@ -165,7 +185,7 @@ def parse():
     else:
         print('Connection error')
     
-    print(data)
+    #print(data)
     return data
 
 id = 0
@@ -187,3 +207,4 @@ df = pd.DataFrame({
 
 data = parse()
 print(df)
+df.to_csv(r'C:\Users\Daniel\OneDrive\Документы\datasets\apartement_data.csv', index=False)
