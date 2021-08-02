@@ -1,1 +1,1 @@
-# apartement-price-predictor
+# apartment-price-predictor
