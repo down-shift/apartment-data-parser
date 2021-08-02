@@ -1,7 +1,8 @@
-# from pandas.core.arrays.integer import Int32Dtype
+#from pandas.core.arrays.integer import Int32Dtype
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
+import time
 
 URL = 'https://saint-petersburg.irr.ru/real-estate/apartments-sale/'
 HEADERS =  {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; rv:71.0) Gecko/20100101 Firefox/71.0',
@@ -12,12 +13,23 @@ HEADERS =  {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; rv:71.0) Gecko/2
 # metro_station+, district, interior (remont), years, cost
 
 def get_html(url, append=''):
-    r = requests.get(url+append, headers=HEADERS)
+    global df
+    try:
+        r = requests.get(url+append, headers=HEADERS)
+    except:
+        time.sleep(1)
+        try:
+            r = requests.get(url+append, headers=HEADERS)
+        except:
+            r = 'Error'
+            df.to_csv(r'C:\Users\Daniel\OneDrive\Документы\datasets\apartement_data (error).csv', index=False)
     return r
 
 def view_pages(links, liv_areas=[], districts=[], years=[], interiors=[], kitchen_areas=[], mins_to_metro=[], metro=[]):
     for l in links:
         page = get_html(l)
+        if page == 'Error':
+            continue
         s = BeautifulSoup(page.text, 'html.parser')
         items = s.find_all('li', class_='productPage__infoColumnBlockText')
         ch_l, ch_d, ch_y_future, ch_y, ch_i, ch_k, ch_mm, ch_m = 0, 0, 0, 0, 0, 0, 0, 0
@@ -176,7 +188,7 @@ def parse():
     soup = BeautifulSoup(html.text, 'html.parser')
     total_pages = int(soup.find_all('a', class_='pagination__pagesLink')[-1].get_text())
     if html.status_code == 200:
-        # repeat for all pages of the website
+        # repeat for all pages of the website!!!!!!!!!
         for i in range(1, total_pages+1):
             append = 'page' + str(i)
             html = get_html(URL, append=append)
