@@ -1,4 +1,4 @@
-from pandas.core.arrays.integer import Int32Dtype
+# from pandas.core.arrays.integer import Int32Dtype
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -7,9 +7,6 @@ URL = 'https://saint-petersburg.irr.ru/real-estate/apartments-sale/'
 HEADERS =  {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; rv:71.0) Gecko/20100101 Firefox/71.0',
             'accept': '*/*'}
 
-# features:
-# rooms (студия - 1)+, area+, lowest_floor, highest_floor, total_floors, 
-# metro_station+, district, interior (remont), years, cost
 
 def get_html(url, append=''):
     r = requests.get(url+append, headers=HEADERS)
@@ -159,8 +156,8 @@ def parse():
     soup = BeautifulSoup(html.text, 'html.parser')
     total_pages = int(soup.find_all('a', class_='pagination__pagesLink')[-1].get_text())
     if html.status_code == 200:
-        # repeat for all pages of the website!!!!!!!!!
-        for i in range(1, 2): #total_pages+1):
+        # repeat for all pages of the website
+        for i in range(1, total_pages+1):
             append = 'page' + str(i)
             html = get_html(URL, append=append)
             data += get_content(html)
