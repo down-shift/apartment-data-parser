@@ -1,4 +1,7 @@
-#from pandas.core.arrays.integer import Int32Dtype
+# This file was used to generate a dataset with information about
+# apartments in St Petersburg, Russia. The dataset will be used
+# to train a ML model.
+
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -8,9 +11,8 @@ URL = 'https://saint-petersburg.irr.ru/real-estate/apartments-sale/'
 HEADERS =  {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; rv:71.0) Gecko/20100101 Firefox/71.0',
             'accept': '*/*'}
 
-# features:
-# rooms (студия - 1)+, area+, lowest_floor, highest_floor, total_floors, 
-# metro_station+, district, interior (remont), years, cost
+# Features: rooms, area, metro, lowest_floor, highest_floor, living_area, 
+# district, year, interior, kitchen_area, mins_to_metro, price	
 
 def get_html(url, append=''):
     global df
@@ -18,9 +20,9 @@ def get_html(url, append=''):
         r = requests.get(url+append, headers=HEADERS)
     except:
         time.sleep(1)
-        try:
+        try: # try again
             r = requests.get(url+append, headers=HEADERS)
-        except:
+        except: # saving the current dataset
             r = 'Error'
             df.to_csv(r'C:\Users\Daniel\OneDrive\Документы\datasets\apartement_data (error).csv', index=False)
     return r
@@ -35,7 +37,6 @@ def view_pages(links, liv_areas=[], districts=[], years=[], interiors=[], kitche
         ch_l, ch_d, ch_y_future, ch_y, ch_i, ch_k, ch_mm, ch_m = 0, 0, 0, 0, 0, 0, 0, 0
         for i in items:
             i = str(i.get_text())
-            #print(i)
             if 'Жилая площадь' in i:
                 i = i.replace('Жилая площадь: ', '')
                 i = float(i.replace(' м2', ''))
